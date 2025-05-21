@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KD-Scripts - Loading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'BankGothic';
+            src: url('bankgothic.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            background-color: #000;
+        }
+        
+        .bank-gothic {
+            font-family: 'BankGothic', sans-serif;
+        }
+
+        .backdrop {
+            background-image: url(loadscreen.png);
+            background-size: cover;
+            background-position: center;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .overlay {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%);
+        }
+
+        .loading-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: rgb(255,255,255);
+            border-radius: 3px;
+            transition: width 0.2s ease-in-out;
+        }
+
+        .pulse {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.8s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="backdrop"></div>
+    
+    <div class="overlay fixed inset-0 flex flex-col justify-between">
+        <!-- Header -->
+        <div class="container mx-auto px-10 pt-8 slide-in" style="animation-delay: 0.2s">
+            <h1 class="bank-gothic text-white text-6xl font-bold tracking-wide text-shadow">CHANGE HERE</h1>
+            <p class="text-gray-300 text-xl mt-2">CHANGE HERE</p>
+        </div>
+        
+        <!-- Footer Loading Section -->
+        <div class="container mx-auto px-10 pb-16 slide-in" style="animation-delay: 0.4s">
+            <div class="grid grid-cols-1 gap-6">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="bank-gothic text-white text-3xl" id="status-text">LOADING RESOURCES</h2>
+                        <div class="text-white text-xl" id="percentage">0%</div>
+                    </div>
+                    <div class="loading-bar">
+                        <div class="progress" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="bg-black bg-opacity-50 p-4 rounded-lg border border-white border-opacity-10 pulse">
+                        <div class="text-gray-400 text-sm">CUSTOM SCRIPTS</div>
+                        <div class="text-white text-xl font-bold">35+</div>
+                    </div>
+                    <div class="bg-black bg-opacity-50 p-4 rounded-lg border border-white border-opacity-10 pulse" style="animation-delay: 0.2s">
+                        <div class="text-gray-400 text-sm">DISCORD</div>
+                        <div class="text-white text-xl font-bold">CHANGE HERE</div>
+                    </div>
+                    <div class="bg-black bg-opacity-50 p-4 rounded-lg border border-white border-opacity-10 pulse" style="animation-delay: 0.4s">
+                        <div class="text-gray-400 text-sm">SERVER NAME</div>
+                        <div class="text-white text-xl font-bold">CHANGE HERE</div>
+                    </div>
+                    <div class="bg-black bg-opacity-50 p-4 rounded-lg border border-white border-opacity-10 pulse" style="animation-delay: 0.6s">
+                        <div class="text-gray-400 text-sm">CURRENT ACTIVITY</div>
+                        <div class="text-white text-xl font-bold" id="current-activity">Starting server...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Loading screen event handlers for FiveM
+        var count = 0;
+        var thisCount = 0;
+
+        const statusText = document.getElementById('status-text');
+        const percentage = document.getElementById('percentage');
+        const progressBar = document.getElementById('progress-bar');
+        const currentActivity = document.getElementById('current-activity');
+        
+        // Make sure progress bar is visible initially
+        progressBar.style.display = 'block';
+        
+        const emojis = [
+            "🌆", "🚗", "🚓", "🏙️", "🌃", "🌉", "🏢", "🌟", "⭐", "💼", "💰", "🔫", "🚁", "🚢"
+        ];
+        
+        // Randomly change current activity every few seconds for visual effect
+        const activities = [
+            "Loading map...", 
+            "Preparing world...", 
+            "Loading vehicles...",
+            "Initializing scripts...", 
+            "Preparing environment...",
+            "Setting up gameplay...",
+            "Loading characters..."
+        ];
+        
+        function updateRandomActivity() {
+            currentActivity.textContent = activities[Math.floor(Math.random() * activities.length)];
+        }
+        
+        setInterval(updateRandomActivity, 3000);
+        updateRandomActivity(); // Initial text
+
+        const handlers = {
+            startInitFunctionOrder(data) {
+                count = data.count;
+                statusText.innerHTML = `INITIALIZING ${emojis[Math.floor(Math.random() * emojis.length)]}`;
+            },
+
+            initFunctionInvoking(data) {
+                let percent = Math.round((data.idx / count) * 100);
+                progressBar.style.width = percent + '%';
+                progressBar.style.display = 'block'; // Ensure visibility
+                percentage.textContent = percent + '%';
+            },
+
+            startDataFileEntries(data) {
+                count = data.count;
+                statusText.innerHTML = `LOADING DATA ${emojis[Math.floor(Math.random() * emojis.length)]}`;
+            },
+
+            performMapLoadFunction(data) {
+                ++thisCount;
+                let percent = Math.round((thisCount / count) * 100);
+                progressBar.style.width = percent + '%';
+                progressBar.style.display = 'block'; // Ensure visibility
+                percentage.textContent = percent + '%';
+            },
+
+            onLogLine(data) {
+                currentActivity.textContent = data.message || "Loading...";
+            }
+        };
+
+        window.addEventListener('message', function(e) {
+            (handlers[e.data.eventName] || function() {})(e.data);
+        });
+    </script>
+</body>
+</html>
